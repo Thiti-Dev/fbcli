@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="fb-cli",
-    version="0.0.1",
+    version="0.0.2",
     author="Chinmaya Krishnan Mahesh",
     author_email="chinmaya.mahesh@gmail.com",
     description="Facebook Command Line Client",

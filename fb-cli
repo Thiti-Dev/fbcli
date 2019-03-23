@@ -1,6 +1,7 @@
 #!/bin/python
 
 import requests
+import pickle
 from bs4 import BeautifulSoup
 from bs4 import NavigableString
 from getpass import getpass
@@ -42,19 +43,23 @@ for i in soup.findAll('input'):
   if i['type'] == 'hidden':
     data[i['name']] = i['value']
 
-print(Fore.BLUE + 'Welcome to fbcli!')
-print(Style.RESET_ALL)
+try:
+  with open('fb-cli.cookie', 'rb') as f:
+    s.cookies.update(pickle.load(f))
+except FileNotFoundError:
+  print(Fore.BLUE + 'Welcome to fbcli!')
+  print(Style.RESET_ALL)
 
-email = input("Email: ")
-password = getpass()
+  email = input("Email: ")
+  password = getpass()
 
-data['email'] = email
-data['pass'] = password
+  data['email'] = email
+  data['pass'] = password
 
-response = s.post('https://m.facebook.com/login/device-based/regular/login/', headers=headers, params=params, data=data)
+  response = s.post('https://m.facebook.com/login/device-based/regular/login/', headers=headers, params=params, data=data)
 
-del data['email']
-del data['pass']
+  del data['email']
+  del data['pass']
 
 running = True
 
@@ -109,7 +114,7 @@ while running:
     }
 
     cid = 'cid.g.'
-    if '%' in threadID:
+    if '%' in threadID or ':' in threadID:
       cid = 'cid.c.'
       threadID = threadID.replace('%3A', ':')
 
@@ -135,9 +140,9 @@ while running:
             print(msgqueue[0])
           if len(msgqueue) > 2:
             for j in msgqueue[1:len(msgqueue)-2]:
-              if j == msgqueue[len(msgqueue)-3]:
+              if "ago" in j or ("at" in j and ":" in j) or "Seen" in j or "Just now" in j:
                 print(Style.DIM)
-              print("\t\t\t" + j)
+              print("\t\t\t" + j + Style.RESET_ALL)
 
           print()
           print()
@@ -157,7 +162,9 @@ while running:
 
     print(msgqueue[0])
     for j in msgqueue[1:]:
-      print("\t\t\t" + j)
+      if "ago" in j or ("at" in j and ":" in j) or "Seen" in j or "Just now" in j:
+        print(Style.DIM)
+      print("\t\t\t" + j + Style.RESET_ALL)
 
     command = input('> ')
     if len(command) == 0:
@@ -191,3 +198,6 @@ while running:
     if command == '/q':
       running = False
       break
+
+with open('fb-cli.cookie', 'wb') as f:
+    pickle.dump(s.cookies, f)
