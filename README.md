@@ -5,7 +5,7 @@ A command line client for facebook messenger
 `pip install fb-cli`
 
 # Usage
-Just run `python cli.py`. It is pretty straightforward from there.
+Just run `fb-cli` from the command line. It is pretty straightforward from there.
 
 # Features
 * Send and recieve text messages
