@@ -1,0 +1,192 @@
+import requests
+from bs4 import BeautifulSoup
+from bs4 import NavigableString
+from getpass import getpass
+import urllib.request
+from colorama import init
+from colorama import Fore, Back, Style
+
+init()
+s = requests.Session()
+
+
+headers = {
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:65.0) Gecko/20100101 Firefox/65.0',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.5',
+    'Referer': 'https://m.facebook.com',
+    'DNT': '1',
+    'Connection': 'keep-alive',
+    'Upgrade-Insecure-Requests': '1',
+    'TE': 'Trailers',
+}
+
+params = (
+    ('ref_component', 'mbasic_home_header'),
+    ('ref_page', 'MMessagingThreadlistController'),
+    ('refid', '11'),
+)
+
+data = {
+  'login': 'Log In'
+}
+
+response = s.get('https://m.facebook.com', headers=headers, params=params)
+response = s.get('https://m.facebook.com/login', headers=headers, params=params)
+
+soup = BeautifulSoup(response.content, 'html.parser')
+
+for i in soup.findAll('input'):
+  if i['type'] == 'hidden':
+    data[i['name']] = i['value']
+
+print(Fore.BLUE + 'Welcome to fbcli!')
+print(Style.RESET_ALL)
+
+email = input("Email: ")
+password = getpass()
+
+data['email'] = email
+data['pass'] = password
+
+response = s.post('https://m.facebook.com/login/device-based/regular/login/', headers=headers, params=params, data=data)
+
+del data['email']
+del data['pass']
+
+running = True
+
+while running:
+  print('\n' * 100)
+  headers = {
+      'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:65.0) Gecko/20100101 Firefox/65.0',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.5',
+      'Referer': 'https://m.facebook.com',
+      'DNT': '1',
+      'Connection': 'keep-alive',
+      'Upgrade-Insecure-Requests': '1',
+      'TE': 'Trailers',
+  }
+
+  params = (
+      ('ref_component', 'mbasic_home_header'),
+      ('ref_page', 'MMessagingThreadlistController'),
+      ('refid', '11'),
+  )
+
+  response = s.get('https://m.facebook.com/messages/', headers=headers, params=params)
+  soup = BeautifulSoup(response.content, 'html.parser')
+
+  idMap = []
+  count = 0
+
+  for i in soup.select('a'):
+    if '/messages/read' in i.get('href'):
+      if count % 2 == 0:
+        print(Fore.GREEN, end='')
+      else:
+        print(Fore.MAGENTA, end='')
+      print(str(count) + ". " + i.get_text())
+      count += 1
+      idMap.append(i.get('href').split('.')[-1].split('&')[0])
+
+  print(Style.RESET_ALL)
+  threadID = idMap[int(input('Group Number: '))]
+
+  while True:
+    headers = {
+      'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:65.0) Gecko/20100101 Firefox/65.0',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.5',
+      'Referer': 'https://m.facebook.com/messages/read/?tid=' + threadID + '&request_type=send_success&_rdr',
+      'DNT': '1',
+      'Connection': 'keep-alive',
+      'Upgrade-Insecure-Requests': '1',
+      'TE': 'Trailers',
+    }
+
+    cid = 'cid.g.'
+    if '%' in threadID:
+      cid = 'cid.c.'
+      threadID = threadID.replace('%3A', ':')
+
+    params = (
+      ('tid', cid + threadID),
+      ('refid', '12'),
+    )
+
+    response = s.get('https://m.facebook.com/messages/read/', headers=headers, params=params)
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+    print('\n' * 100)
+    count = 0
+    msgqueue = []
+    for i in soup.select('#messageGroup')[0].descendants:
+      if count == 0:
+        count += 1
+        continue
+
+      if isinstance(i, NavigableString):
+        if i.parent.name == 'strong':
+          if len(msgqueue) > 0:
+            print(msgqueue[0])
+          if len(msgqueue) > 2:
+            for j in msgqueue[1:len(msgqueue)-2]:
+              if j == msgqueue[len(msgqueue)-3]:
+                print(Style.DIM)
+              print("\t\t\t" + j)
+
+          print()
+          print()
+          print(Style.RESET_ALL)
+          print(Style.BRIGHT + Fore.CYAN + i + ':\t' + Style.RESET_ALL, end='')
+          if len(i) < 15:
+            print('\t', end='')
+          msgqueue = []
+        else:
+          if i != "See Older Messages":
+            msgqueue.append(i)
+      elif i.name == 'img':
+        urllib.request.urlretrieve(i['src'], "fbcli-" + str(count) + ".jpg")
+        msgqueue.append("Image saved in fbcli-" + str(count) + ".jpg")
+
+      count += 1
+
+    print(msgqueue[0])
+    for j in msgqueue[1:]:
+      print("\t\t\t" + j)
+
+    command = input('> ')
+    if len(command) == 0:
+      continue
+
+    if command[0] != '/':
+      message = command
+
+      params = (
+        ('icm', '1'),
+        ('refid', '12'),
+      )
+
+
+      data = {
+        'body': message,
+        'send': 'Send',
+        'tids': cid + threadID,
+      }
+      for i in soup.findAll('input'):
+        print(i)
+        if i['type'] == 'hidden':
+          try:
+            data[i['name']] = i['value']
+          except KeyError:
+            data[i['name']] = ''
+
+
+      response = s.post('https://m.facebook.com/messages/send/', headers=headers, params=params, data=data)
+    if command == '/b':
+      break
+    if command == '/q':
+      running = False
+      break
