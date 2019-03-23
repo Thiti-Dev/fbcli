@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="fb-cli-chin123",
+    name="fb-cli",
     version="0.0.1",
     author="Chinmaya Krishnan Mahesh",
     author_email="chinmaya.mahesh@gmail.com",

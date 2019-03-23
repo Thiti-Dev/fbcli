@@ -2,8 +2,7 @@
 A command line client for facebook messenger
 
 # Installation
-* Clone this repository.
-* Run `pip install -r requirements.txt` (Preferably in a virtualenv)
+`pip install fb-cli`
 
 # Usage
 Just run `python cli.py`. It is pretty straightforward from there.
