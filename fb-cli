@@ -178,7 +178,6 @@ while running:
         'tids': cid + threadID,
       }
       for i in soup.findAll('input'):
-        print(i)
         if i['type'] == 'hidden':
           try:
             data[i['name']] = i['value']
